@@ -1,9 +1,532 @@
 <!DOCTYPE html>
-<html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tv Oynatıcı</title>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <style>
+        /* ========================================================================= */
+        /* TEMEL STİLLER (Masaüstü ve Ortak) */
+        /* ========================================================================= */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            background-color: #f4f4f4;
+            height: 100vh;
+            overflow: hidden;
+        }
+        #top-controls {
+            padding: 15px;
+            background-color: #333;
+            flex-shrink: 0;
+            border-bottom: 2px solid #555;
+        }
+        
+        /* URL Girişi */
+        #url-input-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        #url-input, #search-input {
+            flex-grow: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+        .control-button {
+            padding: 10px 20px;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        #url-load-button { background-color: #007bff; }
+        #encoded-load-button { background-color: #329A32; }
+
+        #search-input {
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        #button-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap; 
+            margin-bottom: 10px;
+        }
+
+        #main-content {
+            display: flex;
+            flex-grow: 1;
+            overflow: hidden;
+        }
+        /* Kanal Listesi (Sol Panel) */
+        #channel-list-container {
+            width: 300px;
+            background-color: #444;
+            color: white;
+            overflow-y: auto;
+            flex-shrink: 0;
+            user-select: none;
+        }
+        .category-title {
+            padding: 12px 10px;
+            background-color: #333;
+            cursor: pointer;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+        }
+        .channel-list-group {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+            background-color: #555;
+        }
+        .channel-item.active {
+            background-color: #28a745; 
+            font-weight: bold;
+        }
+        .toggle-icon.rotated {
+            transform: rotate(90deg);
+        }
+
+        /* Video Oynatıcı */
+        #player-container {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            background-color: #222;
+            padding: 15px;
+            overflow-y: auto;
+        }
+        #video-wrapper {
+            width: 100%;
+            max-width: 1280px; 
+            padding-bottom: 56.25%; /* 16:9 oranı */
+            position: relative;
+            margin-bottom: 10px;
+            flex-shrink: 0;
+        }
+        #video {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-color: black;
+        }
+        
+        /* Mobil Butonlar */
+        #mobile-menu-button {
+            display: none; /* Masaüstünde gizli */
+            width: 100%;
+            padding: 10px;
+            background-color: #dc3545; 
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin-top: 10px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+
+        /* ========================================================================= */
+        /* MOBİL MEDYA SORGUSU (Max 768px genişlik için) */
+        /* ========================================================================= */
+        @media (max-width: 768px) {
+            #url-input-container {
+                flex-direction: column; 
+            }
+            .control-button {
+                width: 100%;
+            }
+            #main-content {
+                flex-direction: column; 
+                overflow-y: auto; 
+            }
+            #channel-list-container {
+                width: 100%; 
+                max-height: 0; 
+                transition: max-height 0.3s ease-in-out;
+                overflow-y: auto;
+                order: 1; 
+            }
+            #channel-list-container.mobile-open {
+                max-height: 80vh; 
+            }
+            #player-container {
+                width: 100%; 
+                padding: 10px 10px 0 10px;
+                order: -1;
+            }
+            #mobile-menu-button {
+                display: block; 
+            }
+            #button-row {
+                flex-direction: column; /* Mobil cihazda butonları alt alta getir */
+            }
+        }
+    </style>
+</head>
 <body>
-<h1>Merhaba</h1>
-<p>I'm hosted with GitHub Pages.</p>
-<p>can@canparlak.com</p>
+
+    <div id="top-controls">
+        
+        <div id="url-input-container">
+            <input type="text" id="url-input" placeholder="M3U Listesi URL'sini buraya yapıştırın (https://...)" value="">
+            <button class="control-button" id="url-load-button" onclick="loadList('url')">URL'den Yükle</button>
+        </div>
+        
+        <input type="text" id="search-input" placeholder="Kanal veya Kategori ara..." onkeyup="filterChannels()">
+
+        <div id="button-row">
+            <button class="control-button" id="encoded-load-button" onclick="loadList('encoded')">Listeyi Yükle</button>
+			Yayınlar sunucumuzda barındırılmamaktadır.
+        </div>
+        
+        <button id="mobile-menu-button" onclick="toggleMobileList()">Kanalları Göster</button> 
+        
+        <p id="status-message"></p>
+    </div>
+
+    <div id="main-content">
+        
+        <div id="channel-list-container">
+            <div id="channel-list">
+                </div>
+        </div>
+
+        <div id="player-container">
+            <h3 id="current-channel-title"></h3>
+            <div id="video-wrapper">
+                <video id="video" controls autoplay></video>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // =========================================================================
+        // 🚨 UZAK 
+        // =========================================================================
+        
+        // 
+        const base64EncodedUrl = 'aHR0cHM6Ly9va2luY2VwZS1lYXN5cHAuaGYuc3BhY2UvcGxheWxpc3Q/dXJsPWh0dHBzOi8vcmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbS9uem82Ni9MaXZlVHYvcmVmcy9oZWFkcy9tYWluL3Zhdm9vLm0zdQ=='; 
+        
+        // =========================================================================
+        
+        // =========================================================================
+        // DEĞİŞKENLER VE FONKSİYONLAR
+        // =========================================================================
+        const channelListContainer = document.getElementById('channel-list-container');
+        const channelListDiv = document.getElementById('channel-list');
+        const videoElement = document.getElementById('video');
+        const currentTitle = document.getElementById('current-channel-title');
+        const statusMessage = document.getElementById('status-message');
+        const urlInput = document.getElementById('url-input');
+        const searchInput = document.getElementById('search-input');
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        
+        let hls;
+        let groupedChannels = {};
+        let allChannels = [];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            currentTitle.textContent = 'Oynatıcı Hazır';
+            // Yerel depolamadan okumayı kaldırdık
+            statusMessage.textContent = 'Lütfen bir yükleme seçeneği kullanın.';
+        });
+
+        // Ana yükleme fonksiyonu
+        async function loadList(mode) {
+            hls && hls.destroy();
+            videoElement.src = '';
+            currentTitle.textContent = 'Yükleniyor...';
+            allChannels = [];
+            
+            let m3uSourceUrl = '';
+
+            if (mode === 'url') {
+                m3uSourceUrl = urlInput.value.trim();
+                if (!m3uSourceUrl) {
+                    statusMessage.textContent = 'Lütfen geçerli bir M3U URL\'si girin.';
+                    return;
+                }
+                statusMessage.textContent = 'M3U URL\'den çekiliyor...';
+            } else if (mode === 'encoded') { // Gizli URL modu
+                if (!base64EncodedUrl || base64EncodedUrl.length < 10) {
+                    statusMessage.textContent = 'Gizli URL kodu boş veya geçersiz. Lütfen kodu (base64EncodedUrl) kontrol edin.';
+                    return;
+                }
+                try {
+                    m3uSourceUrl = atob(base64EncodedUrl); // Base64'ten çöz
+                } catch (e) {
+                    statusMessage.textContent = 'Hata: Gizli URL çözülemiyor. Kodlanmış diziyi kontrol edin.';
+                    return;
+                }
+                statusMessage.textContent = 'Gizli URL çekiliyor...';
+            } else {
+                 statusMessage.textContent = 'Geçersiz yükleme modu.';
+                 return;
+            }
+            
+            try {
+                const response = await fetch(m3uSourceUrl);
+                if (!response.ok) {
+                    throw new Error(`HTTP hatası! Durum: ${response.status}`);
+                }
+                const m3uContent = await response.text();
+                groupedChannels = parseM3U(m3uContent);
+                
+                if (allChannels.length === 0) {
+                     statusMessage.textContent = 'M3U içeriği ayrıştırılamadı veya boş.';
+                     currentTitle.textContent = 'Liste Boş/Geçersiz';
+                } else {
+                     statusMessage.textContent = `${allChannels.length} kanal, ${Object.keys(groupedChannels).length} kategoride yüklendi. Artık arama yapabilirsiniz.`;
+                     renderChannelList(groupedChannels);
+                }
+
+            } catch (error) {
+                console.error("M3U yükleme hatası:", error);
+                statusMessage.textContent = `Listeyi yüklerken hata oluştu: ${error.message}. CORS veya ağ hatası olabilir.`;
+                channelListDiv.innerHTML = '';
+            }
+        }
+        
+        // =========================================================================
+        // DİĞER FONKSİYONLAR (DEĞİŞMEDİ)
+        // =========================================================================
+
+        function toggleMobileList() {
+            const isOpen = channelListContainer.classList.toggle('mobile-open');
+            if (isOpen) {
+                mobileMenuButton.textContent = 'Kanalları Gizle';
+                channelListContainer.scrollTop = 0; 
+            } else {
+                mobileMenuButton.textContent = `Kanalları Göster (${allChannels.length} Kanal)`;
+            }
+        }
+
+        function parseM3U(content) {
+            if (!content || !content.trim()) return {};
+
+            const lines = content.split('\n');
+            const groups = {};
+            let currentChannel = {};
+            let currentGroup = 'Kategorisiz Kanallar';
+            allChannels = [];
+
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+
+                if (line.startsWith('#EXTINF')) {
+                    const groupMatch = line.match(/group-title=["']?([^"']+)["']?/i);
+                    currentGroup = (groupMatch && groupMatch[1]) ? groupMatch[1].trim() : 'Kategorisiz Kanallar';
+                    
+                    const nameMatch = line.match(/,(.+)$/);
+                    if (nameMatch && nameMatch[1]) {
+                        currentChannel.name = nameMatch[1].trim();
+                    }
+                    
+                } else if (line.startsWith('http') || line.startsWith('https')) {
+                    if (currentChannel.name) {
+                        currentChannel.url = line;
+                        currentChannel.group = currentGroup;
+                        
+                        if (!groups[currentGroup]) {
+                            groups[currentGroup] = [];
+                        }
+                        groups[currentGroup].push(currentChannel);
+                        
+                        allChannels.push(currentChannel);
+
+                        currentChannel = {};
+                    }
+                }
+            }
+            return groups;
+        }
+
+        function renderChannelList(channelsToRender) {
+            channelListDiv.innerHTML = ''; 
+            
+            if (Object.keys(channelsToRender).length === 0) {
+                channelListDiv.innerHTML = '<p style="color:#aaa; padding:10px;">Aradığınız kanala veya kategoriye ulaşılamadı.</p>';
+                return;
+            }
+
+            let firstItemClicked = false;
+
+            for (const groupName in channelsToRender) {
+                const channels = channelsToRender[groupName];
+                
+                const safeId = `group-${groupName.replace(/[^a-zA-Z0-9]/g, '_')}`;
+
+                const groupTitle = document.createElement('div');
+                groupTitle.classList.add('category-title');
+                groupTitle.innerHTML = `${groupName} (${channels.length}) <span class="toggle-icon">▶</span>`;
+                groupTitle.setAttribute('data-target', safeId);
+                
+                const channelGroup = document.createElement('div');
+                channelGroup.classList.add('channel-list-group');
+                channelGroup.id = safeId;
+
+                channels.forEach((channel) => {
+                    const item = document.createElement('div');
+                    item.classList.add('channel-item');
+                    item.textContent = channel.name;
+                    item.setAttribute('data-url', channel.url);
+                    
+                    item.addEventListener('click', () => {
+                        playChannel(channel.url, channel.name, item);
+                        if (window.innerWidth <= 768) {
+                            toggleMobileList(); 
+                        }
+                    });
+                    
+                    channelGroup.appendChild(item);
+
+                    if (!firstItemClicked && searchInput.value.trim() === "") {
+                        item.click();
+                        firstItemClicked = true;
+                    }
+                });
+
+                groupTitle.addEventListener('click', toggleGroup);
+                
+                channelListDiv.appendChild(groupTitle);
+                channelListDiv.appendChild(channelGroup);
+                
+                if (Object.keys(channelsToRender)[0] === groupName && searchInput.value.trim() === "") {
+                     toggleGroup({ currentTarget: groupTitle });
+                }
+            }
+            mobileMenuButton.textContent = `Kanalları Göster (${allChannels.length} Kanal)`;
+        }
+        
+        function toggleGroup(event) {
+            const titleElement = event.currentTarget;
+            const targetId = titleElement.getAttribute('data-target');
+            const content = document.getElementById(targetId);
+            const icon = titleElement.querySelector('.toggle-icon');
+
+            if (content.classList.contains('open')) {
+                content.classList.remove('open');
+                content.style.maxHeight = null;
+                icon.classList.remove('rotated');
+            } else {
+                if (window.innerWidth > 768) {
+                    document.querySelectorAll('.channel-list-group.open').forEach(openGroup => {
+                        openGroup.classList.remove('open');
+                        openGroup.style.maxHeight = null;
+                        openGroup.previousElementSibling.querySelector('.toggle-icon').classList.remove('rotated');
+                    });
+                }
+
+                content.classList.add('open');
+                content.style.maxHeight = content.scrollHeight + "px";
+                icon.classList.add('rotated');
+            }
+        }
+
+
+        function filterChannels() {
+            const searchTerm = searchInput.value.trim().toLowerCase();
+            
+            if (searchTerm === "") {
+                statusMessage.textContent = `${allChannels.length} kanal, ${Object.keys(groupedChannels).length} kategoride yüklendi.`;
+                renderChannelList(groupedChannels);
+                return;
+            }
+            
+            const filteredGroups = {};
+            
+            allChannels.forEach(channel => {
+                const channelMatches = channel.name.toLowerCase().includes(searchTerm);
+                const groupMatches = channel.group.toLowerCase().includes(searchTerm);
+                
+                if (channelMatches || groupMatches) {
+                    const groupName = channel.group;
+                    if (!filteredGroups[groupName]) {
+                        filteredGroups[groupName] = [];
+                    }
+                    filteredGroups[groupName].push(channel);
+                }
+            });
+
+            const totalChannelsFound = Object.values(filteredGroups).reduce((sum, group) => sum + group.length, 0);
+            statusMessage.textContent = `${totalChannelsFound} kanal bulundu.`;
+
+            renderChannelList(filteredGroups);
+            
+            document.querySelectorAll('.channel-list-group').forEach(group => {
+                group.classList.add('open');
+                group.style.maxHeight = group.scrollHeight + "px";
+            });
+            document.querySelectorAll('.category-title .toggle-icon').forEach(icon => {
+                icon.classList.add('rotated');
+            });
+        }
+
+
+        function playChannel(url, name, clickedElement) {
+            document.querySelectorAll('.channel-item').forEach(el => el.classList.remove('active'));
+            if (clickedElement) {
+                clickedElement.classList.add('active');
+                clickedElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+            
+            currentTitle.textContent = name;
+
+            if (Hls.isSupported()) {
+                if (hls) {
+                    hls.destroy();
+                }
+                
+                hls = new Hls();
+                hls.loadSource(url);
+                hls.attachMedia(videoElement);
+                
+                hls.on(Hls.Events.ERROR, function (event, data) {
+                    console.error("HLS Hatası:", data);
+                    
+                    if (data.fatal) {
+                        currentTitle.textContent = `${name} (HATA: Yeniden yükleniyor...)`;
+                        if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+                             hls.startLoad();
+                        } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+                             hls.recoverMediaError();
+                        } else {
+                             hls.destroy();
+                             videoElement.src = '';
+                             currentTitle.textContent = `${name} (CİDDİ HATA: Tekrar seçmeyi deneyin)`;
+                        }
+                    }
+                });
+
+                hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                    videoElement.play().catch(e => console.error("Oynatma otomatik başlatılamadı:", e));
+                });
+                
+
+            } else if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
+                videoElement.src = url;
+                videoElement.addEventListener('loadedmetadata', function() {
+                    videoElement.play().catch(e => console.error("Oynatma otomatik başlatılamadı (yerel):", e));
+                });
+            } else {
+                currentTitle.textContent = `${name} (HATA: Tarayıcınız M3U8 akışını desteklemiyor!)`;
+            }
+        }
+    </script>
 
 </body>
 </html>
