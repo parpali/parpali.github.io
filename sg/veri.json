@@ -1,0 +1,38 @@
+[
+  {
+    "id": 1,
+    "tip": "duyuru",
+    "baslik": "Dikkat",
+    "icerik": "Yıllık izin planlamaları Cuma gününe kadar teslim edilecektir."
+  },
+  {
+    "id": 2,
+    "tip": "kart",
+    "baslik": "Günlük Rapor",
+    "icerik": "İçtima öncesi mıntıka temizliği kontrol edilecektir."
+  },
+  {
+    "id": 3,
+    "tip": "nobet",
+    "baslik": "Bu Hafta",
+    "icerik": "Nöbetçi Asb: Kd.Bçvş. Ahmet YILMAZ"
+  },
+  {
+    "id": 1001,
+    "tip": "rehber",
+    "baslik": "Tekne ismi yazmamak veya okunacak şekilde bulundurmamak",
+    "icerik": "Bağlama Kütüğü Uygulama Yönetmeliği Md. 6"
+  },
+  {
+    "id": 1002,
+    "tip": "rehber",
+    "baslik": "Bağlama Kütüğü Ruhsatnamesinin vizesini yaptırmamak",
+    "icerik": "Bağlama Kütüğü Uygulama Yönetmeliği Md. 11"
+  },
+  {
+    "id": 1003,
+    "tip": "rehber",
+    "baslik": "Ticari amaçlı su ürünleri avcılık teskeresi almamak",
+    "icerik": "1380 Sayılı Su Ürünleri Kanunu Md. 23"
+  }
+]

@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SGK Personel Destek Sistemi</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* --- GENEL AYARLAR --- */
+        :root { --primary-color: #003366; --dark-blue: #002244; --accent-color: #e65100; --light-bg: #f0f2f5; --sidebar-width: 260px; --text-grey: #666; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { display: flex; min-height: 100vh; background-color: var(--light-bg); }
+
+        /* --- SOL MENÜ --- */
+        .sidebar { width: var(--sidebar-width); background-color: var(--primary-color); color: white; display: flex; flex-direction: column; position: fixed; height: 100%; z-index: 1000; }
+        .logo-area { padding: 30px 20px; text-align: center; background: var(--dark-blue); border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .logo-area i { font-size: 2rem; color: var(--accent-color); margin-bottom: 10px; }
+        .nav-links { list-style: none; padding-top: 20px; }
+        .nav-links li a { display: flex; align-items: center; padding: 15px 25px; color: #ccc; text-decoration: none; transition: 0.3s; border-left: 4px solid transparent; cursor: pointer; }
+        .nav-links li a:hover, .nav-links li a.active { background-color: rgba(255,255,255,0.05); color: white; border-left-color: var(--accent-color); }
+        .nav-links li a i { width: 25px; margin-right: 10px; }
+
+        /* --- İÇERİK ALANI --- */
+        .main-content { margin-left: var(--sidebar-width); flex: 1; padding: 40px; }
+        .header { margin-bottom: 30px; border-bottom: 2px solid #ddd; padding-bottom: 20px; }
+        .header h1 { color: var(--primary-color); font-size: 1.8rem; }
+        .section { display: none; animation: fadeIn 0.4s; }
+        .section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- KARTLAR & TABLOLAR --- */
+        .grid-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-top: 4px solid var(--primary-color); }
+        .table-container { overflow-x: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
+        th { background-color: var(--primary-color); color: white; }
+        
+        .btn { display: inline-block; padding: 8px 15px; background-color: var(--primary-color); color: white; text-decoration: none; border-radius: 4px; font-size: 0.9rem; margin-top: 10px; }
+        .btn-download { background-color: #28a745; }
+        .alert-box { background-color: #fff3cd; color: #856404; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 5px solid #ffc107; }
+
+        /* --- ARAMA KUTULARI --- */
+        .search-hero { background: white; padding: 30px; border-radius: 10px; text-align: center; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .search-input { width: 100%; max-width: 600px; padding: 12px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 1rem; outline: none; transition: 0.3s;}
+        .search-input:focus { border-color: var(--primary-color); }
+        
+        /* --- ADMIN ALANI --- */
+        .json-output { width: 100%; height: 100px; background: #333; color: #0f0; padding: 10px; font-family: monospace; border-radius: 5px; margin-top: 10px; }
+        .admin-form { background: white; padding: 25px; border-radius: 10px; }
+        .form-elem { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 5px; }
+
+    </style>
+</head>
+<body>
+
+    <nav class="sidebar">
+        <div class="logo-area">
+            <i class="fas fa-anchor"></i>
+            <h2>S.G. ASİSTAN</h2>
+            <span>Personel Destek</span>
+        </div>
+        <ul class="nav-links">
+            <li><a onclick="showSection('home')" class="active" id="link-home"><i class="fas fa-home"></i> Ana Sayfa</a></li>
+            <li><a onclick="showSection('mevzuat')" id="link-mevzuat"><i class="fas fa-book-open"></i> Mevzuat Kütüphanesi</a></li>
+            <li><a onclick="showSection('islemler')" id="link-islemler"><i class="fas fa-search-plus"></i> İşlem Rehberi</a></li>
+            <li><a onclick="showSection('tutanaklar')" id="link-tutanaklar"><i class="fas fa-file-contract"></i> Tutanaklar</a></li>
+            <li><a onclick="showSection('cezalar')" id="link-cezalar"><i class="fas fa-lira-sign"></i> Ceza Cetvelleri</a></li>
+            <li><a onclick="showSection('iletisim')" id="link-iletisim"><i class="fas fa-phone"></i> İletişim</a></li>
+            <li style="margin-top: 30px; border-top: 1px solid rgba(255,255,255,0.1);">
+                <a onclick="showSection('admin')" id="link-admin"><i class="fas fa-cog"></i> Veri Üretici</a>
+            </li>
+        </ul>
+    </nav>
+
+    <main class="main-content">
+        
+        <div id="home" class="section active">
+            <header class="header">
+                <h1>Komutanlık İşlem Paneli</h1>
+                <p>Güncel duyurular ve hızlı erişim.</p>
+            </header>
+            <div id="duyuru-alani"><div class="alert-box">Yükleniyor...</div></div>
+            <div class="grid-container" id="anasayfa-kartlari"></div>
+        </div>
+
+        <div id="mevzuat" class="section">
+            <header class="header"><h1>Mevzuat Kütüphanesi</h1></header>
+            <div class="search-hero">
+                <input type="text" id="mevzuatInput" class="search-input" placeholder="Kanun ara (Örn: 2559, PVSK, 1380)...">
+                <button onclick="mevzuatAra()" class="btn" style="margin-left:10px;">Ara</button>
+            </div>
+            <div class="grid-container">
+                <div class="card" onclick="hizliAra('5271 Sayılı CMK')" style="cursor:pointer; text-align:center;"><h3>CMK (5271)</h3></div>
+                <div class="card" onclick="hizliAra('5237 Sayılı TCK')" style="cursor:pointer; text-align:center;"><h3>TCK (5237)</h3></div>
+                <div class="card" onclick="hizliAra('1380 Sayılı Su Ürünleri')" style="cursor:pointer; text-align:center;"><h3>Su Ürünleri</h3></div>
+            </div>
+        </div>
+
+        <div id="islemler" class="section">
+            <header class="header">
+                <h1>İşlem ve Kabahat Rehberi</h1>
+                <p>Kabahat veya kanun maddesi yazarak arama yapın.</p>
+            </header>
+            <div class="search-hero">
+                <i class="fas fa-filter" style="color:var(--primary-color); font-size:1.5rem; margin-bottom:10px;"></i><br>
+                <input type="text" id="rehberAramaInput" class="search-input" 
+                       placeholder="Örn: Tekne ismi yazmamak, Md 6, Ruhsat..." 
+                       onkeyup="rehberFiltrele()">
+                <p style="margin-top:10px; color:#888;"><span id="sonuc-sayisi">0</span> kayıt bulundu.</p>
+            </div>
+            <div class="grid-container" id="rehber-listesi"></div>
+        </div>
+
+        <div id="tutanaklar" class="section">
+            <header class="header"><h1>Matbu Evraklar</h1></header>
+            <div class="table-container">
+                <table>
+                    <thead><tr><th>Belge Adı</th><th>Tür</th><th>İşlem</th></tr></thead>
+                    <tbody>
+                        <tr><td>Olay Yeri Tespit Tutanağı</td><td>Adli</td><td><a href="#" class="btn btn-download">İndir</a></td></tr>
+                        <tr><td>Rızai Teslim Tutanağı</td><td>Adli</td><td><a href="#" class="btn btn-download">İndir</a></td></tr>
+                        <tr><td>İdari Para Cezası Kararı</td><td>İdari</td><td><a href="#" class="btn btn-download">İndir</a></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="cezalar" class="section">
+            <header class="header"><h1>2025 Ceza Cetvelleri</h1></header>
+            <div class="table-container">
+                <h3>1380 Sayılı Su Ürünleri Kanunu</h3>
+                <table>
+                    <thead><tr><th>Madde</th><th>Fiil</th><th>Ceza</th></tr></thead>
+                    <tbody>
+                        <tr><td>23/b</td><td>Ruhsatsız Avcılık (Ticari)</td><td>15.000 TL</td></tr>
+                        <tr><td>36/k</td><td>Amatör Avcılık İhlali</td><td>2.500 TL</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="iletisim" class="section">
+            <header class="header"><h1>Nöbet ve İletişim</h1></header>
+            <div class="grid-container">
+                <div class="card">
+                    <h3><i class="fas fa-phone"></i> Önemli Numaralar</h3>
+                    <p><strong>SG İhbar:</strong> 158<br><strong>Acil Çağrı:</strong> 112</p>
+                </div>
+                <div class="card">
+                    <h3><i class="fas fa-user-shield"></i> Nöbetçi Personel</h3>
+                    <p id="nobetci-bilgisi">Yükleniyor...</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="admin" class="section">
+            <header class="header"><h1>Veri Üretim Paneli</h1></header>
+            <div class="admin-form">
+                <select id="contentType" class="form-elem">
+                    <option value="rehber">İşlem Rehberi (Kabahat/Madde)</option>
+                    <option value="duyuru">Duyuru</option>
+                    <option value="kart">Ana Sayfa Kartı</option>
+                    <option value="nobet">Nöbetçi Bilgisi</option>
+                </select>
+                <input type="text" id="adminTitle" class="form-elem" placeholder="Başlık / Kabahat Adı">
+                <textarea id="adminContent" class="form-elem" rows="3" placeholder="İçerik / Kanun Maddesi"></textarea>
+                <button onclick="kodUret()" class="btn">JSON Kodu Üret</button>
+                <textarea id="jsonOutput" class="json-output"></textarea>
+                <button onclick="kopyala()" class="btn" style="background:#444;">Kopyala</button>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        let tumVeriler = [];
+
+        // Sayfa Yüklendiğinde
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const response = await fetch('veri.json');
+                if(!response.ok) throw new Error("Dosya bulunamadı");
+                tumVeriler = await response.json();
+                
+                ekranaBas(tumVeriler);
+                rehberFiltrele(); // İlk açılışta boş arama yapıp listeyi göster
+            } catch (error) {
+                console.log("Demo Modu veya Hata: " + error);
+                document.getElementById('duyuru-alani').innerHTML = '<div class="alert-box">Veri dosyası (veri.json) okunamadı.</div>';
+            }
+        });
+
+        // Verileri Ekrana Dağıt
+        function ekranaBas(veriler) {
+            const duyuruAlani = document.getElementById('duyuru-alani');
+            const kartAlani = document.getElementById('anasayfa-kartlari');
+            const nobetAlani = document.getElementById('nobetci-bilgisi');
+
+            duyuruAlani.innerHTML = '';
+            kartAlani.innerHTML = '';
+            if(nobetAlani) nobetAlani.innerHTML = 'Veri yok.';
+
+            veriler.forEach(veri => {
+                if(veri.tip === 'duyuru') {
+                    duyuruAlani.innerHTML += `<div class="alert-box"><i class="fas fa-bullhorn"></i> <strong>${veri.baslik}:</strong> ${veri.icerik}</div>`;
+                } else if(veri.tip === 'kart') {
+                    kartAlani.innerHTML += `<div class="card"><h3><i class="fas fa-info-circle"></i> ${veri.baslik}</h3><p>${veri.icerik}</p></div>`;
+                } else if(veri.tip === 'nobet') {
+                    if(nobetAlani) nobetAlani.innerHTML = `<strong>${veri.baslik}</strong><br>${veri.icerik}`;
+                }
+            });
+        }
+
+        // REHBER ARAMA MOTORU
+        function rehberFiltrele() {
+            const aranan = document.getElementById('rehberAramaInput').value.toLowerCase();
+            const liste = document.getElementById('rehber-listesi');
+            const sayacElem = document.getElementById('sonuc-sayisi');
+            
+            liste.innerHTML = '';
+            let sayac = 0;
+
+            const filtrelenenler = tumVeriler.filter(v => {
+                if (v.tip !== 'rehber') return false;
+                // Eğer arama kutusu boşsa hepsini gösterme (çok veri varsa kasmasın), 
+                // ya da hepsini göster (tercihe bağlı). Şimdilik hepsini gösteriyoruz:
+                if (aranan === "") return true; 
+                return v.baslik.toLowerCase().includes(aranan) || v.icerik.toLowerCase().includes(aranan);
+            });
+
+            filtrelenenler.forEach(veri => {
+                sayac++;
+                liste.innerHTML += `
+                <div class="card" style="border-top-color: var(--accent-color);">
+                    <h3 style="color:#333; font-size:1rem;">${veri.baslik}</h3>
+                    <div style="background:#eee; padding:10px; border-radius:5px; margin-top:10px; color:var(--primary-color); font-weight:bold;">
+                        ${veri.icerik}
+                    </div>
+                </div>`;
+            });
+            sayacElem.innerText = sayac;
+            if(sayac===0) liste.innerHTML = '<div style="grid-column:1/-1; text-align:center;">Kayıt bulunamadı.</div>';
+        }
+
+        // YARDIMCI FONKSİYONLAR
+        function showSection(id) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-links a').forEach(l => l.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            document.getElementById('link-'+id).classList.add('active');
+        }
+        function mevzuatAra() {
+            const val = document.getElementById('mevzuatInput').value;
+            window.open(`https://www.google.com/search?q=site:mevzuat.gov.tr+${encodeURIComponent(val)}`, '_blank');
+        }
+        function hizliAra(val) { window.open(`https://www.google.com/search?q=site:mevzuat.gov.tr+${encodeURIComponent(val)}`, '_blank'); }
+        
+        function kodUret() {
+            const veri = {
+                id: Date.now(),
+                tip: document.getElementById('contentType').value,
+                baslik: document.getElementById('adminTitle').value,
+                icerik: document.getElementById('adminContent').value
+            };
+            document.getElementById('jsonOutput').value = ",\n" + JSON.stringify(veri, null, 2);
+        }
+        function kopyala() {
+            const c = document.getElementById("jsonOutput"); c.select(); document.execCommand("copy");
+            alert("Kopyalandı! veri.json dosyasına ekleyin.");
+        }
+    </script>
+	<style>
+    /* Metin seçimini (mavi tarama) engeller */
+    body {
+        -webkit-user-select: none; /* Safari */
+        -moz-user-select: none; /* Firefox */
+        -ms-user-select: none; /* IE10+/Edge */
+        user-select: none; /* Standart */
+    }
+</style>
+
+<script>
+    // 1. Sağ tık menüsünü engelleme
+    document.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+    });
+
+    // 2. Klavye kısayollarını engelleme (Kopyala, Kaynak, İncele vb.)
+    document.onkeydown = function(e) {
+        // F12 Tuşu
+        if(e.keyCode == 123) {
+            return false;
+        }
+        // CTRL tuşu ile yapılan kombinasyonlar
+        if(e.ctrlKey && (
+            e.keyCode == 67 || // C (Kopyala)
+            e.keyCode == 86 || // V (Yapıştır)
+            e.keyCode == 85 || // U (Kaynak Kodu)
+            e.keyCode == 83 || // S (Kaydet)
+            e.keyCode == 73 || // I (İncele)
+            e.keyCode == 74    // J (İncele)
+        )) {
+            return false;
+        }
+    };
+</script>
+</body>
+</html>
