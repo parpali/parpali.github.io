@@ -261,18 +261,18 @@
                     return;
                 }
                 statusMessage.textContent = 'M3U URL\'den çekiliyor...';
-            } else if (mode === 'encoded') { // Gizli URL modu
+            } else if (mode === 'encoded') { // URL modu
                 if (!base64EncodedUrl || base64EncodedUrl.length < 10) {
-                    statusMessage.textContent = 'Gizli URL kodu boş veya geçersiz. Lütfen kodu (base64EncodedUrl) kontrol edin.';
+                    statusMessage.textContent = 'URL kodu boş veya geçersiz. Lütfen kodu (base64EncodedUrl) kontrol edin.';
                     return;
                 }
                 try {
                     m3uSourceUrl = atob(base64EncodedUrl); // Base64'ten çöz
                 } catch (e) {
-                    statusMessage.textContent = 'Hata: Gizli URL çözülemiyor. Kodlanmış diziyi kontrol edin.';
+                    statusMessage.textContent = 'Hata: URL çözülemiyor. Kodlanmış diziyi kontrol edin.';
                     return;
                 }
-                statusMessage.textContent = 'Gizli URL çekiliyor...';
+                statusMessage.textContent = 'URL çekiliyor...';
             } else {
                  statusMessage.textContent = 'Geçersiz yükleme modu.';
                  return;
