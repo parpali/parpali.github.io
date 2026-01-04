@@ -3,42 +3,42 @@
     "id": 1,
     "tip": "duyuru",
     "baslik": "Dikkat",
-    "icerik": "Sistemde bulunan kabahat ve kanun maddeleri referans amaçlıdır."
+    "icerik": "Sistemde bulunan kabahat ve kanun maddeleri referans amaçlıdır.",
 	"aciklama": ""
   },
   {
     "id": 2,
     "tip": "kart",
     "baslik": "Günlük Rapor",
-    "icerik": "İçtima öncesi mıntıka temizliği kontrol edilecektir."
+    "icerik": "İçtima öncesi mıntıka temizliği kontrol edilecektir.",
 	"aciklama": ""
   },
   {
     "id": 3,
     "tip": "nobet",
     "baslik": "Bu Hafta",
-    "icerik": "Nöbetçi Asb: Kd.Bçvş. Ahmet YILMAZ"
+    "icerik": "Nöbetçi Asb: Kd.Bçvş. Ahmet YILMAZ",
 	"aciklama": ""
   },
   {
     "id": 1001,
     "tip": "rehber",
     "baslik": "Tekne ismi yazmamak veya okunacak şekilde bulundurmamak",
-    "icerik": "Bağlama Kütüğü Uygulama Yönetmeliği Md. 6"
+    "icerik": "Bağlama Kütüğü Uygulama Yönetmeliği Md. 6",
 	"aciklama": "Özel teknelerde isim yazmıyorsa uyarı yapılır, ticari teknelerde ise idari yaptırım uygulanır."
   },
   {
     "id": 1002,
     "tip": "rehber",
     "baslik": "Bağlama Kütüğü Ruhsatnamesinin vizesini yaptırmamak",
-    "icerik": "Bağlama Kütüğü Uygulama Yönetmeliği Md. 11"
+    "icerik": "Bağlama Kütüğü Uygulama Yönetmeliği Md. 11",
 	"aciklama": ""
   },
   {
     "id": 1003,
     "tip": "rehber",
     "baslik": "Ticari amaçlı su ürünleri avcılık teskeresi almamak",
-    "icerik": "1380 Sayılı Su Ürünleri Kanunu Md. 23"
-	"aciklama": ""
+    "icerik": "1380 Sayılı Su Ürünleri Kanunu Md. 23",
+	"aciklama": "" 
   }
 ]
