@@ -28,7 +28,7 @@
             position: fixed; 
             height: 100%; 
             z-index: 1000; 
-            transition: transform 0.3s ease; /* Mobilde kayma efekti için */
+            transition: transform 0.3s ease; 
         }
         
         .logo-area { padding: 30px 20px; text-align: center; background: var(--dark-blue); border-bottom: 1px solid rgba(255,255,255,0.1); }
@@ -40,7 +40,7 @@
 
         /* --- MOBİL MENÜ BUTONU --- */
         .menu-toggle {
-            display: none; /* Masaüstünde gizli */
+            display: none; 
             position: fixed;
             top: 15px;
             left: 15px;
@@ -55,7 +55,6 @@
             box-shadow: 0 2px 10px rgba(0,0,0,0.2);
         }
 
-        /* --- KARARTMA (OVERLAY) --- */
         .overlay {
             display: none;
             position: fixed;
@@ -75,25 +74,15 @@
         .header { margin-bottom: 30px; border-bottom: 2px solid #ddd; padding-bottom: 20px; }
         .header h1 { color: var(--primary-color); font-size: 1.8rem; }
         
-        /* MOBİL UYUMLULUK (RESPONSIVE) AYARLARI */
+        /* MOBİL UYUMLULUK */
         @media (max-width: 768px) {
-            /* Menüyü gizle (Sol dışına it) */
             .sidebar { transform: translateX(-100%); }
-            
-            /* Menü açıldığında */
             .sidebar.active { transform: translateX(0); }
-            
-            /* İçeriği tam ekran yap */
-            .main-content { margin-left: 0; padding: 20px; padding-top: 70px; /* Buton için üst boşluk */ }
-            
-            /* Butonu göster */
+            .main-content { margin-left: 0; padding: 20px; padding-top: 70px; }
             .menu-toggle { display: block; }
-            
-            /* Menü açılınca arka planı karart */
             .overlay.active { display: block; }
-
             .header h1 { font-size: 1.4rem; }
-            .grid-container { grid-template-columns: 1fr; } /* Kartları tek sütun yap */
+            .grid-container { grid-template-columns: 1fr; } 
         }
 
         .section { display: none; animation: fadeIn 0.4s; }
@@ -102,13 +91,13 @@
 
         /* --- KARTLAR & TABLOLAR --- */
         .grid-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
-        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-top: 4px solid var(--primary-color); }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-top: 4px solid var(--primary-color); display: flex; flex-direction: column; gap: 10px; }
         .table-container { overflow-x: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; min-width: 500px; /* Tablo mobilde kaydırılsın diye */ }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; min-width: 500px; }
         th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
         th { background-color: var(--primary-color); color: white; }
         
-        .btn { display: inline-block; padding: 8px 15px; background-color: var(--primary-color); color: white; text-decoration: none; border-radius: 4px; font-size: 0.9rem; margin-top: 10px; }
+        .btn { display: inline-block; padding: 8px 15px; background-color: var(--primary-color); color: white; text-decoration: none; border-radius: 4px; font-size: 0.9rem; margin-top: 10px; cursor: pointer; border: none;}
         .btn-download { background-color: #28a745; }
         .alert-box { background-color: #fff3cd; color: #856404; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 5px solid #ffc107; }
 
@@ -122,6 +111,25 @@
         .admin-form { background: white; padding: 25px; border-radius: 10px; }
         .form-elem { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 5px; }
 
+        /* --- YENİ EKLENEN STİLLER (Açıklama Kutusu) --- */
+        .guide-content {
+            background: #eef2f6;
+            color: #003366;
+            padding: 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 0.95rem;
+            border-left: 3px solid #003366;
+        }
+        .guide-desc {
+            font-size: 0.95rem;
+            color: #555;
+            line-height: 1.5;
+            margin-top: 5px;
+            border-top: 1px dashed #ddd;
+            padding-top: 10px;
+        }
+
     </style>
 </head>
 <body>
@@ -129,7 +137,6 @@
     <button class="menu-toggle" onclick="toggleMenu()">
         <i class="fas fa-bars"></i>
     </button>
-
     <div class="overlay" id="overlay" onclick="toggleMenu()"></div>
 
     <nav class="sidebar" id="sidebar">
@@ -183,7 +190,7 @@
             <div class="search-hero">
                 <i class="fas fa-filter" style="color:var(--primary-color); font-size:1.5rem; margin-bottom:10px;"></i><br>
                 <input type="text" id="rehberAramaInput" class="search-input" 
-                       placeholder="Örn: Tekne ismi yazmamak, Md 6, Ruhsat..." 
+                       placeholder="İşlem, kanun maddesi veya detay ara..." 
                        onkeyup="rehberFiltrele()">
                 <p style="margin-top:10px; color:#888;"><span id="sonuc-sayisi">0</span> kayıt bulundu.</p>
             </div>
@@ -235,14 +242,18 @@
         <div id="admin" class="section">
             <header class="header"><h1>Veri Üretim Paneli</h1></header>
             <div class="admin-form">
-                <select id="contentType" class="form-elem">
-                    <option value="rehber">İşlem Rehberi (Kabahat/Madde)</option>
+                <select id="contentType" class="form-elem" onchange="formDuzenle()">
+                    <option value="rehber">İşlem Rehberi (3 Alanlı)</option>
                     <option value="duyuru">Duyuru</option>
                     <option value="kart">Ana Sayfa Kartı</option>
                     <option value="nobet">Nöbetçi Bilgisi</option>
                 </select>
-                <input type="text" id="adminTitle" class="form-elem" placeholder="Başlık / Kabahat Adı">
-                <textarea id="adminContent" class="form-elem" rows="3" placeholder="İçerik / Kanun Maddesi"></textarea>
+                
+                <input type="text" id="adminTitle" class="form-elem" placeholder="Başlık (Örn: Tekne İsmi Yazmama)">
+                <textarea id="adminContent" class="form-elem" rows="2" placeholder="İçerik (Örn: Md. 4 - Kanun No 1380)"></textarea>
+                
+                <textarea id="adminDesc" class="form-elem" rows="3" placeholder="Açıklama (Örn: Denize elverişlilik belgesi yoksa işlem yapılır...)" style="background-color: #f9fff9;"></textarea>
+                
                 <button onclick="kodUret()" class="btn">JSON Kodu Üret</button>
                 <textarea id="jsonOutput" class="json-output"></textarea>
                 <button onclick="kopyala()" class="btn" style="background:#444;">Kopyala</button>
@@ -254,7 +265,6 @@
     <script>
         let tumVeriler = [];
 
-        // MOBİL MENÜ İŞLEMLERİ
         function toggleMenu() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('overlay');
@@ -262,7 +272,6 @@
             overlay.classList.toggle('active');
         }
 
-        // Sayfa Yüklendiğinde
         document.addEventListener('DOMContentLoaded', async () => {
             try {
                 const response = await fetch('veri.json');
@@ -277,7 +286,6 @@
             }
         });
 
-        // Verileri Ekrana Dağıt
         function ekranaBas(veriler) {
             const duyuruAlani = document.getElementById('duyuru-alani');
             const kartAlani = document.getElementById('anasayfa-kartlari');
@@ -298,7 +306,7 @@
             });
         }
 
-        // REHBER ARAMA MOTORU
+        // --- GÜNCELLENMİŞ REHBER FİLTRELEME (3 ALANLI) ---
         function rehberFiltrele() {
             const aranan = document.getElementById('rehberAramaInput').value.toLowerCase();
             const liste = document.getElementById('rehber-listesi');
@@ -310,21 +318,55 @@
             const filtrelenenler = tumVeriler.filter(v => {
                 if (v.tip !== 'rehber') return false;
                 if (aranan === "") return true; 
-                return v.baslik.toLowerCase().includes(aranan) || v.icerik.toLowerCase().includes(aranan);
+                
+                // Başlık, İçerik veya Açıklama kısmında arama yap
+                const baslikVar = v.baslik.toLowerCase().includes(aranan);
+                const icerikVar = v.icerik.toLowerCase().includes(aranan);
+                const aciklamaVar = v.aciklama ? v.aciklama.toLowerCase().includes(aranan) : false;
+                
+                return baslikVar || icerikVar || aciklamaVar;
             });
 
             filtrelenenler.forEach(veri => {
                 sayac++;
+                // Açıklama alanı boşsa gösterme
+                const aciklamaHTML = veri.aciklama ? `<div class="guide-desc">${veri.aciklama}</div>` : '';
+                
                 liste.innerHTML += `
                 <div class="card" style="border-top-color: var(--accent-color);">
-                    <h3 style="color:#333; font-size:1rem;">${veri.baslik}</h3>
-                    <div style="background:#eee; padding:10px; border-radius:5px; margin-top:10px; color:var(--primary-color); font-weight:bold;">
+                    <h3 style="color:#333; font-size:1.1rem; border-bottom:1px solid #eee; padding-bottom:5px;">${veri.baslik}</h3>
+                    
+                    <div class="guide-content">
                         ${veri.icerik}
                     </div>
+                    
+                    ${aciklamaHTML}
                 </div>`;
             });
             sayacElem.innerText = sayac;
             if(sayac===0) liste.innerHTML = '<div style="grid-column:1/-1; text-align:center;">Kayıt bulunamadı.</div>';
+        }
+
+        // --- ADMIN PANELİ FONKSİYONLARI ---
+        function formDuzenle() {
+            // Seçilen tipe göre placeholderları değiştirilebilir (Opsiyonel)
+        }
+
+        function kodUret() {
+            const tip = document.getElementById('contentType').value;
+            const veri = {
+                id: Date.now(),
+                tip: tip,
+                baslik: document.getElementById('adminTitle').value,
+                icerik: document.getElementById('adminContent').value
+            };
+
+            // Eğer "İşlem Rehberi" seçiliyse "aciklama" alanını da ekle
+            if(tip === 'rehber') {
+                veri.aciklama = document.getElementById('adminDesc').value;
+            }
+
+            document.getElementById('jsonOutput').value = ",\n" + JSON.stringify(veri, null, 2);
         }
 
         // YARDIMCI FONKSİYONLAR
@@ -334,7 +376,6 @@
             document.getElementById(id).classList.add('active');
             document.getElementById('link-'+id).classList.add('active');
 
-            // Mobilde menüden bir şeye tıklanınca menüyü kapat
             if(window.innerWidth <= 768) {
                 toggleMenu();
             }
@@ -345,15 +386,6 @@
         }
         function hizliAra(val) { window.open(`https://www.google.com/search?q=site:mevzuat.gov.tr+${encodeURIComponent(val)}`, '_blank'); }
         
-        function kodUret() {
-            const veri = {
-                id: Date.now(),
-                tip: document.getElementById('contentType').value,
-                baslik: document.getElementById('adminTitle').value,
-                icerik: document.getElementById('adminContent').value
-            };
-            document.getElementById('jsonOutput').value = ",\n" + JSON.stringify(veri, null, 2);
-        }
         function kopyala() {
             const c = document.getElementById("jsonOutput"); c.select(); document.execCommand("copy");
             alert("Kopyalandı! veri.json dosyasına ekleyin.");
@@ -361,38 +393,13 @@
     </script>
     
     <style>
-    /* Metin seçimini (mavi tarama) engeller */
-    body {
-        -webkit-user-select: none; /* Safari */
-        -moz-user-select: none; /* Firefox */
-        -ms-user-select: none; /* IE10+/Edge */
-        user-select: none; /* Standart */
-    }
+    body { -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; }
     </style>
-
     <script>
-    // 1. Sağ tık menüsünü engelleme
-    document.addEventListener('contextmenu', function(e) {
-        e.preventDefault();
-    });
-
-    // 2. Klavye kısayollarını engelleme (Kopyala, Kaynak, İncele vb.)
+    document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
     document.onkeydown = function(e) {
-        // F12 Tuşu
-        if(e.keyCode == 123) {
-            return false;
-        }
-        // CTRL tuşu ile yapılan kombinasyonlar
-        if(e.ctrlKey && (
-            e.keyCode == 67 || // C (Kopyala)
-            e.keyCode == 86 || // V (Yapıştır)
-            e.keyCode == 85 || // U (Kaynak Kodu)
-            e.keyCode == 83 || // S (Kaydet)
-            e.keyCode == 73 || // I (İncele)
-            e.keyCode == 74    // J (İncele)
-        )) {
-            return false;
-        }
+        if(e.keyCode == 123) return false;
+        if(e.ctrlKey && (e.keyCode == 67 || e.keyCode == 86 || e.keyCode == 85 || e.keyCode == 83 || e.keyCode == 73 || e.keyCode == 74)) return false;
     };
     </script>
 </body>
