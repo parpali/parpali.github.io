@@ -533,6 +533,23 @@
                 max-width: 90%;
                 padding: 20px;
             }
+
+            #status-indicators {
+                top: 5px;
+                right: 5px;
+                gap: 5px;
+                flex-wrap: wrap;
+                max-width: calc(100% - 10px);
+            }
+
+            .status-badge {
+                padding: 6px 12px;
+                font-size: 0.75em;
+            }
+
+            .buffer-indicator {
+                min-width: 100px;
+            }
         }
 
         /* ========================================================================= */
@@ -679,6 +696,172 @@
         #main-app.unlocked {
             display: flex;
         }
+
+        /* ========================================================================= */
+        /* SMART FEATURES - STATUS INDICATORS */
+        /* ========================================================================= */
+        #status-indicators {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            gap: 10px;
+            z-index: 100;
+        }
+
+        .status-badge {
+            padding: 8px 16px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .live-indicator {
+            display: none;
+        }
+
+        .live-indicator.active {
+            display: flex;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: #ef4444;
+            border-radius: 50%;
+            animation: blink 1.5s ease-in-out infinite;
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.3;
+            }
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        .quality-indicator {
+            display: none;
+        }
+
+        .quality-indicator.active {
+            display: flex;
+        }
+
+        .quality-bars {
+            display: flex;
+            gap: 2px;
+            align-items: flex-end;
+        }
+
+        .quality-bar {
+            width: 3px;
+            background: var(--text-secondary);
+            border-radius: 2px;
+            transition: all 0.3s ease;
+        }
+
+        .quality-bar:nth-child(1) {
+            height: 6px;
+        }
+
+        .quality-bar:nth-child(2) {
+            height: 10px;
+        }
+
+        .quality-bar:nth-child(3) {
+            height: 14px;
+        }
+
+        .quality-bar:nth-child(4) {
+            height: 18px;
+        }
+
+        .quality-excellent .quality-bar {
+            background: var(--success-color);
+        }
+
+        .quality-good .quality-bar:nth-child(-n+3) {
+            background: var(--success-color);
+        }
+
+        .quality-fair .quality-bar:nth-child(-n+2) {
+            background: var(--warning-color);
+        }
+
+        .quality-poor .quality-bar:nth-child(1) {
+            background: var(--danger-color);
+        }
+
+        .buffer-indicator {
+            display: none;
+            min-width: 120px;
+        }
+
+        .buffer-indicator.active {
+            display: flex;
+        }
+
+        .buffer-progress {
+            flex: 1;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-left: 8px;
+        }
+
+        .buffer-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 2px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        .reconnect-indicator {
+            display: none;
+            background: rgba(239, 68, 68, 0.2);
+            border-color: var(--danger-color);
+        }
+
+        .reconnect-indicator.active {
+            display: flex;
+        }
+
+        .reconnect-spinner {
+            width: 12px;
+            height: 12px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
     </style>
 
 </head>
@@ -728,6 +911,32 @@
                 <h3 id="current-channel-title">Oynatıcı Hazır</h3>
                 <div id="video-wrapper">
                     <video id="video" controls autoplay></video>
+
+                    <!-- Smart Status Indicators -->
+                    <div id="status-indicators">
+                        <div class="status-badge live-indicator" id="live-indicator">
+                            <span class="live-dot"></span>
+                            <span>CANLI</span>
+                        </div>
+                        <div class="status-badge quality-indicator" id="quality-indicator">
+                            <div class="quality-bars">
+                                <div class="quality-bar"></div>
+                                <div class="quality-bar"></div>
+                                <div class="quality-bar"></div>
+                                <div class="quality-bar"></div>
+                            </div>
+                        </div>
+                        <div class="status-badge buffer-indicator" id="buffer-indicator">
+                            <span>📊</span>
+                            <div class="buffer-progress">
+                                <div class="buffer-fill" id="buffer-fill"></div>
+                            </div>
+                        </div>
+                        <div class="status-badge reconnect-indicator" id="reconnect-indicator">
+                            <div class="reconnect-spinner"></div>
+                            <span id="reconnect-text">Yeniden bağlanıyor...</span>
+                        </div>
+                    </div>
                 </div>
 
                 <div id="favorites-panel">
@@ -862,6 +1071,16 @@
         let favorites = JSON.parse(localStorage.getItem('tv_favorites') || '[]');
         let lastWatchedChannel = JSON.parse(localStorage.getItem('tv_last_watched') || 'null');
         let volumeLevel = parseFloat(localStorage.getItem('tv_volume') || '1');
+
+        // Smart Features Variables
+        let reconnectAttempts = 0;
+        const MAX_RECONNECT_ATTEMPTS = 3;
+        let reconnectTimeout = null;
+        let qualityCheckInterval = null;
+        let bufferCheckInterval = null;
+        let connectionQuality = 'excellent'; // excellent, good, fair, poor
+        let lastBufferTime = 0;
+        let bufferingCount = 0;
 
         // =========================================================================
         // INITIALIZATION
@@ -1150,9 +1369,218 @@
         }
 
         // =========================================================================
+        // SMART FEATURES - MONITORING FUNCTIONS
+        // =========================================================================
+        function showLiveIndicator() {
+            document.getElementById('live-indicator').classList.add('active');
+        }
+
+        function hideLiveIndicator() {
+            document.getElementById('live-indicator').classList.remove('active');
+        }
+
+        function updateConnectionQuality(quality) {
+            const indicator = document.getElementById('quality-indicator');
+            indicator.className = 'status-badge quality-indicator active quality-' + quality;
+            connectionQuality = quality;
+        }
+
+        function showQualityIndicator() {
+            document.getElementById('quality-indicator').classList.add('active');
+        }
+
+        function hideQualityIndicator() {
+            document.getElementById('quality-indicator').classList.remove('active');
+        }
+
+        function updateBufferStatus(percentage) {
+            const bufferFill = document.getElementById('buffer-fill');
+            const bufferIndicator = document.getElementById('buffer-indicator');
+
+            if (percentage > 0 && percentage < 100) {
+                bufferIndicator.classList.add('active');
+                bufferFill.style.width = percentage + '%';
+            } else {
+                bufferIndicator.classList.remove('active');
+            }
+        }
+
+        function showReconnectIndicator(attempt) {
+            const indicator = document.getElementById('reconnect-indicator');
+            const text = document.getElementById('reconnect-text');
+            indicator.classList.add('active');
+            text.textContent = `Yeniden bağlanıyor (${attempt}/${MAX_RECONNECT_ATTEMPTS})...`;
+        }
+
+        function hideReconnectIndicator() {
+            document.getElementById('reconnect-indicator').classList.remove('active');
+        }
+
+        function startQualityMonitoring() {
+            if (qualityCheckInterval) clearInterval(qualityCheckInterval);
+
+            qualityCheckInterval = setInterval(() => {
+                if (!hls || !hls.levels) return;
+
+                const stats = hls.stats;
+                const currentLevel = hls.currentLevel;
+
+                // Calculate quality based on buffering and level
+                if (bufferingCount > 5) {
+                    updateConnectionQuality('poor');
+                } else if (bufferingCount > 2) {
+                    updateConnectionQuality('fair');
+                } else if (currentLevel >= 0 && hls.levels.length > 1) {
+                    const levelRatio = currentLevel / (hls.levels.length - 1);
+                    if (levelRatio > 0.7) {
+                        updateConnectionQuality('excellent');
+                    } else {
+                        updateConnectionQuality('good');
+                    }
+                } else {
+                    updateConnectionQuality('excellent');
+                }
+
+                // Reset buffering count periodically
+                if (bufferingCount > 0) {
+                    bufferingCount = Math.max(0, bufferingCount - 1);
+                }
+            }, 3000);
+        }
+
+        function startBufferMonitoring() {
+            if (bufferCheckInterval) clearInterval(bufferCheckInterval);
+
+            bufferCheckInterval = setInterval(() => {
+                if (!videoElement.buffered.length) return;
+
+                const currentTime = videoElement.currentTime;
+                const buffered = videoElement.buffered;
+
+                for (let i = 0; i < buffered.length; i++) {
+                    if (buffered.start(i) <= currentTime && currentTime <= buffered.end(i)) {
+                        const bufferLength = buffered.end(i) - currentTime;
+                        const percentage = Math.min(100, (bufferLength / 30) * 100); // 30 seconds = 100%
+
+                        if (bufferLength < 5) {
+                            updateBufferStatus(percentage);
+                        } else {
+                            updateBufferStatus(0);
+                        }
+                        break;
+                    }
+                }
+            }, 1000);
+        }
+
+        function stopMonitoring() {
+            if (qualityCheckInterval) {
+                clearInterval(qualityCheckInterval);
+                qualityCheckInterval = null;
+            }
+            if (bufferCheckInterval) {
+                clearInterval(bufferCheckInterval);
+                bufferCheckInterval = null;
+            }
+            hideLiveIndicator();
+            hideQualityIndicator();
+            updateBufferStatus(0);
+            hideReconnectIndicator();
+        }
+
+        function attemptReconnect(url, name) {
+            if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+                hideReconnectIndicator();
+                showToast('Bağlantı kurulamadı. Lütfen başka bir kanal deneyin.', 'error');
+                currentTitle.textContent = `${name} (BAĞLANTI HATASI)`;
+                reconnectAttempts = 0;
+                return;
+            }
+
+            reconnectAttempts++;
+            showReconnectIndicator(reconnectAttempts);
+
+            reconnectTimeout = setTimeout(() => {
+                console.log(`Reconnect attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS}`);
+
+                if (hls) {
+                    hls.destroy();
+                }
+
+                // Recreate HLS instance
+                hls = new Hls({
+                    enableWorker: true,
+                    lowLatencyMode: true,
+                    backBufferLength: 90
+                });
+
+                hls.loadSource(url);
+                hls.attachMedia(videoElement);
+                setupHlsEvents(name);
+
+            }, 2000 * reconnectAttempts); // Exponential backoff
+        }
+
+        function setupHlsEvents(name) {
+            hls.on(Hls.Events.MANIFEST_PARSED, function () {
+                videoElement.play().catch(e => console.error("Oynatma başlatılamadı:", e));
+                reconnectAttempts = 0;
+                hideReconnectIndicator();
+                showLiveIndicator();
+                showQualityIndicator();
+                startQualityMonitoring();
+                startBufferMonitoring();
+            });
+
+            hls.on(Hls.Events.ERROR, function (event, data) {
+                console.error("HLS Hatası:", data);
+
+                if (data.fatal) {
+                    switch (data.type) {
+                        case Hls.ErrorTypes.NETWORK_ERROR:
+                            console.log("Network error, attempting to recover...");
+                            currentTitle.textContent = `${name} (Ağ Hatası)`;
+                            attemptReconnect(currentChannel.url, name);
+                            break;
+                        case Hls.ErrorTypes.MEDIA_ERROR:
+                            console.log("Media error, attempting to recover...");
+                            hls.recoverMediaError();
+                            bufferingCount++;
+                            break;
+                        default:
+                            console.log("Fatal error, cannot recover");
+                            stopMonitoring();
+                            currentTitle.textContent = `${name} (CİDDİ HATA)`;
+                            showToast('Akış oynatılamıyor. Başka bir kanal deneyin.', 'error');
+                            break;
+                    }
+                }
+            });
+
+            // Buffer events
+            videoElement.addEventListener('waiting', () => {
+                bufferingCount++;
+                updateBufferStatus(50);
+            });
+
+            videoElement.addEventListener('playing', () => {
+                updateBufferStatus(0);
+            });
+
+            videoElement.addEventListener('canplay', () => {
+                updateBufferStatus(0);
+            });
+        }
+
+        // =========================================================================
         // PLAY CHANNEL
         // =========================================================================
         function playChannel(url, name, clickedElement) {
+            // Stop previous monitoring
+            stopMonitoring();
+            reconnectAttempts = 0;
+            bufferingCount = 0;
+
             document.querySelectorAll('.channel-item').forEach(el => el.classList.remove('active'));
             if (clickedElement) {
                 clickedElement.classList.add('active');
@@ -1182,32 +1610,15 @@
                 hls.loadSource(url);
                 hls.attachMedia(videoElement);
 
-                hls.on(Hls.Events.ERROR, function (event, data) {
-                    console.error("HLS Hatası:", data);
-
-                    if (data.fatal) {
-                        currentTitle.textContent = `${name} (HATA: Yeniden yükleniyor...)`;
-                        if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
-                            hls.startLoad();
-                        } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
-                            hls.recoverMediaError();
-                        } else {
-                            hls.destroy();
-                            videoElement.src = '';
-                            currentTitle.textContent = `${name} (CİDDİ HATA)`;
-                            showToast('Akış oynatılamıyor. Başka bir kanal deneyin.', 'error');
-                        }
-                    }
-                });
-
-                hls.on(Hls.Events.MANIFEST_PARSED, function () {
-                    videoElement.play().catch(e => console.error("Oynatma başlatılamadı:", e));
-                });
+                // Setup HLS events with smart features
+                setupHlsEvents(name);
 
             } else if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
                 videoElement.src = url;
                 videoElement.addEventListener('loadedmetadata', function () {
                     videoElement.play().catch(e => console.error("Oynatma başlatılamadı:", e));
+                    showLiveIndicator();
+                    startBufferMonitoring();
                 });
             } else {
                 currentTitle.textContent = `${name} (HATA: Tarayıcı desteklemiyor!)`;
