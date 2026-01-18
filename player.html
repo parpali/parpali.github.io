@@ -559,7 +559,7 @@
                 </div>
 
                 <button class="btn" onclick="togglePiP()">🖼️ PiP</button>
-                <button class="btn" onclick="toggleFullscreen()">⛶ Tam Ekran</button>
+                <button class="btn primary" onclick="toggleFullscreen()" id="fullscreen-btn">⛶ Tam Ekran</button>
             </div>
         </div>
     </div>
@@ -682,14 +682,51 @@
             }
         }
 
-        // Fullscreen
+        // Fullscreen - Works in Telegram WebApp
         function toggleFullscreen() {
-            if (!document.fullscreenElement) {
-                video.requestFullscreen().catch(err => {
-                    console.error('Fullscreen error:', err);
+            try {
+                // For iOS/Safari (Telegram WebApp on iOS)
+                if (video.webkitEnterFullscreen) {
+                    if (video.webkitDisplayingFullscreen) {
+                        video.webkitExitFullscreen();
+                    } else {
+                        video.webkitEnterFullscreen();
+                    }
+                }
+                // For Android and desktop
+                else if (video.requestFullscreen) {
+                    if (!document.fullscreenElement) {
+                        video.requestFullscreen().catch(err => {
+                            console.error('Fullscreen error:', err);
+                            // Fallback: try container fullscreen
+                            tryContainerFullscreen();
+                        });
+                    } else {
+                        document.exitFullscreen();
+                    }
+                }
+                // Fallback for other browsers
+                else {
+                    tryContainerFullscreen();
+                }
+            } catch (err) {
+                console.error('Fullscreen error:', err);
+            }
+        }
+
+        // Fallback: Make container fullscreen-like
+        function tryContainerFullscreen() {
+            const container = document.getElementById('player-container');
+            if (container.requestFullscreen) {
+                container.requestFullscreen().catch(err => {
+                    console.error('Container fullscreen error:', err);
                 });
-            } else {
-                document.exitFullscreen();
+            } else if (container.webkitRequestFullscreen) {
+                container.webkitRequestFullscreen();
+            } else if (container.mozRequestFullScreen) {
+                container.mozRequestFullScreen();
+            } else if (container.msRequestFullscreen) {
+                container.msRequestFullscreen();
             }
         }
 
