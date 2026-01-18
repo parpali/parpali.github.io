@@ -767,17 +767,11 @@
                 hls.on(Hls.Events.MANIFEST_PARSED, function (event, data) {
                     hideLoading();
 
-                    // Try to play with sound first
-                    video.muted = false;
+                    // Start playing muted (required for mobile autoplay)
                     video.play().catch(err => {
-                        console.error('Autoplay with sound failed, trying muted:', err);
-                        // If autoplay with sound fails, try muted
-                        video.muted = true;
-                        video.play().catch(err2 => {
-                            console.error('Autoplay muted also failed:', err2);
-                            // Show play button overlay
-                            showPlayOverlay();
-                        });
+                        console.error('Autoplay failed:', err);
+                        // Show play button overlay if autoplay completely fails
+                        showPlayOverlay();
                     });
 
                     // Populate quality menu
@@ -925,16 +919,23 @@
             }
         }
 
-        // Auto-unmute after user interaction if video is playing muted
-        video.addEventListener('playing', function () {
-            if (video.muted && !playOverlay) {
-                // Try to unmute after a short delay
-                setTimeout(() => {
-                    video.muted = false;
-                    updateMuteIcon();
-                }, 500);
+        // Unmute on first user interaction
+        let hasUnmuted = false;
+
+        function unmuteOnInteraction() {
+            if (!hasUnmuted && video.muted) {
+                video.muted = false;
+                hasUnmuted = true;
+                updateMuteIcon();
+                // Remove listeners after first unmute
+                video.removeEventListener('click', unmuteOnInteraction);
+                document.removeEventListener('touchstart', unmuteOnInteraction);
             }
-        });
+        }
+
+        // Add listeners for user interaction
+        video.addEventListener('click', unmuteOnInteraction);
+        document.addEventListener('touchstart', unmuteOnInteraction, { once: true });
 
         // Telegram Web App integration
         if (window.Telegram && window.Telegram.WebApp) {
