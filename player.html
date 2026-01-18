@@ -1,27 +1,66 @@
 <!DOCTYPE html>
 <html lang="tr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>IPTV Player</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-    <script src="https://cdn.jsdelivr.net/npm/video.js@latest/dist/video.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --text-primary: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.8);
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
             background: #000;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             overflow: hidden;
             width: 100vw;
             height: 100vh;
+            position: relative;
         }
-        
+
+        /* Animated gradient background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--primary-gradient);
+            opacity: 0.05;
+            z-index: 0;
+            animation: gradientShift 15s ease infinite;
+        }
+
+        @keyframes gradientShift {
+
+            0%,
+            100% {
+                opacity: 0.05;
+            }
+
+            50% {
+                opacity: 0.1;
+            }
+        }
+
         #player-container {
             position: relative;
             width: 100%;
@@ -30,34 +69,139 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
+            z-index: 1;
         }
-        
+
         #video {
             width: 100%;
             height: 100%;
             object-fit: contain;
             background: #000;
         }
-        
+
+        /* Channel Info with Glassmorphism */
         #channel-info {
             position: absolute;
             top: 20px;
             left: 20px;
             right: 20px;
-            background: rgba(0, 0, 0, 0.8);
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             padding: 15px 20px;
-            border-radius: 12px;
-            color: white;
+            border-radius: 16px;
+            border: 1px solid var(--glass-border);
+            color: var(--text-primary);
             font-size: 16px;
             font-weight: 600;
             z-index: 10;
-            transition: opacity 0.3s;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-        
+
         #channel-info.hidden {
             opacity: 0;
+            transform: translateY(-10px);
         }
-        
+
+        /* Live Indicator */
+        .live-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--error);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: white;
+            border-radius: 50%;
+            animation: blink 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        /* Connection Quality Indicator */
+        #connection-quality {
+            position: absolute;
+            top: 80px;
+            right: 20px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 10px 15px;
+            border-radius: 12px;
+            border: 1px solid var(--glass-border);
+            color: var(--text-primary);
+            font-size: 12px;
+            z-index: 10;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        #connection-quality.hidden {
+            opacity: 0;
+            transform: translateX(10px);
+        }
+
+        .quality-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 5px;
+        }
+
+        .quality-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            transition: background 0.3s ease;
+        }
+
+        .quality-dot.good {
+            background: var(--success);
+        }
+
+        .quality-dot.medium {
+            background: var(--warning);
+        }
+
+        .quality-dot.poor {
+            background: var(--error);
+        }
+
+        /* Loading Spinner */
         #loading {
             position: absolute;
             top: 50%;
@@ -66,89 +210,358 @@
             color: white;
             font-size: 18px;
             z-index: 5;
+            text-align: center;
         }
-        
+
         .spinner {
-            border: 4px solid rgba(255, 255, 255, 0.3);
-            border-top: 4px solid white;
+            border: 4px solid rgba(255, 255, 255, 0.2);
+            border-top: 4px solid transparent;
             border-radius: 50%;
-            width: 50px;
-            height: 50px;
+            width: 60px;
+            height: 60px;
             animation: spin 1s linear infinite;
             margin: 0 auto 15px;
+            background: var(--primary-gradient);
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.5);
         }
-        
+
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
-        
+
+        /* Error Modal */
         #error {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: rgba(220, 38, 38, 0.95);
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 2px solid var(--error);
             color: white;
-            padding: 20px 30px;
-            border-radius: 12px;
+            padding: 30px;
+            border-radius: 20px;
             text-align: center;
             max-width: 80%;
             z-index: 20;
             display: none;
+            box-shadow: 0 8px 32px rgba(239, 68, 68, 0.3);
         }
-        
+
         #error.show {
             display: block;
+            animation: slideIn 0.3s ease;
         }
-        
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -60%);
+            }
+
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%);
+            }
+        }
+
+        #error h3 {
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+
+        #error p {
+            margin-bottom: 20px;
+            color: var(--text-secondary);
+        }
+
+        /* Controls Container */
         .controls {
             position: absolute;
-            bottom: 20px;
-            left: 20px;
-            right: 20px;
-            display: flex;
-            gap: 10px;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.9) 0%, transparent 100%);
+            padding: 20px;
             z-index: 10;
+            transition: all 0.3s ease;
         }
-        
-        .btn {
-            flex: 1;
-            padding: 12px;
-            background: rgba(255, 255, 255, 0.2);
+
+        .controls.hidden {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        /* Volume Control */
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            padding: 10px 15px;
+            border-radius: 12px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .volume-btn {
+            background: none;
             border: none;
-            border-radius: 8px;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 5px;
+            transition: transform 0.2s ease;
+        }
+
+        .volume-btn:active {
+            transform: scale(0.9);
+        }
+
+        .volume-slider {
+            flex: 1;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.2);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--primary-gradient);
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.5);
+            transition: transform 0.2s ease;
+        }
+
+        .volume-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        .volume-slider::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--primary-gradient);
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.5);
+        }
+
+        .volume-percentage {
+            min-width: 40px;
+            text-align: right;
+            color: var(--text-primary);
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        /* Button Row */
+        .button-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 14px 20px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
             color: white;
             font-size: 14px;
             font-weight: 600;
             cursor: pointer;
-            backdrop-filter: blur(10px);
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+            min-height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
         }
-        
+
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
         .btn:active {
-            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(0);
+        }
+
+        .btn.primary {
+            background: var(--primary-gradient);
+            border: none;
+        }
+
+        .btn.danger {
+            background: var(--secondary-gradient);
+            border: none;
+        }
+
+        /* Quality Selector */
+        .quality-selector {
+            position: relative;
+            display: inline-block;
+        }
+
+        .quality-menu {
+            position: absolute;
+            bottom: 100%;
+            left: 0;
+            right: 0;
+            margin-bottom: 10px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            overflow: hidden;
+            display: none;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        .quality-menu.show {
+            display: block;
+            animation: slideUp 0.2s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .quality-option {
+            padding: 12px 16px;
+            color: white;
+            cursor: pointer;
+            transition: background 0.2s ease;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .quality-option:last-child {
+            border-bottom: none;
+        }
+
+        .quality-option:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .quality-option.active {
+            background: var(--primary-gradient);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            #channel-info {
+                font-size: 14px;
+                padding: 12px 15px;
+            }
+
+            .button-row {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .btn {
+                font-size: 13px;
+                padding: 12px 16px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .controls {
+                padding: 15px;
+            }
+
+            .volume-control {
+                padding: 8px 12px;
+            }
         }
     </style>
 </head>
+
 <body>
     <div id="player-container">
         <div id="channel-info">
             <span id="channel-name">📺 Kanal yükleniyor...</span>
+            <span class="live-indicator">
+                <span class="live-dot"></span>
+                CANLI
+            </span>
         </div>
-        
+
+        <div id="connection-quality" class="hidden">
+            <div class="quality-indicator">
+                <span class="quality-dot good" id="quality-dot"></span>
+                <span id="quality-text">Bağlantı İyi</span>
+            </div>
+            <div id="buffer-info" style="font-size: 11px; color: var(--text-secondary);"></div>
+        </div>
+
         <div id="loading">
             <div class="spinner"></div>
             <div>Yükleniyor...</div>
         </div>
-        
+
         <div id="error">
             <h3>❌ Hata</h3>
             <p id="error-message">Yayın başlatılamadı</p>
+            <button class="btn danger" onclick="reconnect()">🔄 Yeniden Bağlan</button>
         </div>
-        
-        <video id="video" playsinline controls autoplay></video>
-        
-        
+
+        <video id="video" playsinline autoplay></video>
+
+        <div class="controls">
+            <div class="volume-control">
+                <button class="volume-btn" onclick="toggleMute()" id="mute-btn">🔊</button>
+                <input type="range" class="volume-slider" id="volume-slider" min="0" max="100" value="100">
+                <span class="volume-percentage" id="volume-percentage">100%</span>
+            </div>
+
+            <div class="button-row">
+                <button class="btn" onclick="togglePlay()">
+                    <span id="play-icon">⏸️</span>
+                    <span id="play-text">Duraklat</span>
+                </button>
+
+                <div class="quality-selector">
+                    <button class="btn" onclick="toggleQualityMenu()">
+                        ⚙️ <span id="current-quality">Kalite</span>
+                    </button>
+                    <div class="quality-menu" id="quality-menu">
+                        <div class="quality-option active" onclick="setQuality('auto')">Otomatik</div>
+                    </div>
+                </div>
+
+                <button class="btn" onclick="togglePiP()">🖼️ PiP</button>
+                <button class="btn" onclick="toggleFullscreen()">⛶ Tam Ekran</button>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -156,109 +569,120 @@
         const urlParams = new URLSearchParams(window.location.search);
         const streamUrl = urlParams.get('url');
         const channelName = urlParams.get('name') || 'IPTV Kanalı';
-        
+
         const video = document.getElementById('video');
         const loading = document.getElementById('loading');
         const error = document.getElementById('error');
         const errorMessage = document.getElementById('error-message');
         const channelInfo = document.getElementById('channel-info');
         const channelNameEl = document.getElementById('channel-name');
-        
+        const connectionQuality = document.getElementById('connection-quality');
+        const qualityDot = document.getElementById('quality-dot');
+        const qualityText = document.getElementById('quality-text');
+        const bufferInfo = document.getElementById('buffer-info');
+        const controls = document.querySelector('.controls');
+
+        let hls = null;
+        let reconnectAttempts = 0;
+        let maxReconnectAttempts = 3;
+        let reconnectTimeout = null;
+        let controlsTimeout = null;
+        let qualityLevels = [];
+
         // Set channel name
         channelNameEl.textContent = `📺 ${decodeURIComponent(channelName)}`;
-        
-        // Hide channel info after 5 seconds
+
+        // Auto-hide channel info and connection quality
         setTimeout(() => {
             channelInfo.classList.add('hidden');
+            connectionQuality.classList.add('hidden');
         }, 5000);
-        
-        // Show channel info on tap
+
+        // Show info on tap
         video.addEventListener('click', () => {
             channelInfo.classList.remove('hidden');
+            connectionQuality.classList.remove('hidden');
+            showControls();
             setTimeout(() => {
                 channelInfo.classList.add('hidden');
+                connectionQuality.classList.add('hidden');
             }, 3000);
         });
-        
-        if (!streamUrl) {
-            showError('Stream URL bulunamadı');
-        } else {
-            loadStream(streamUrl);
+
+        // Auto-hide controls
+        function showControls() {
+            controls.classList.remove('hidden');
+            clearTimeout(controlsTimeout);
+            controlsTimeout = setTimeout(() => {
+                controls.classList.add('hidden');
+            }, 4000);
         }
-        
-        function loadStream(url) {
-            if (Hls.isSupported()) {
-                const hls = new Hls({
-                    enableWorker: true,
-                    lowLatencyMode: true,
-                    backBufferLength: 90
-                });
-                
-                hls.loadSource(url);
-                hls.attachMedia(video);
-                
-                hls.on(Hls.Events.MANIFEST_PARSED, function() {
-                    hideLoading();
-                    video.play().catch(err => {
-                        console.error('Autoplay error:', err);
-                    });
-                });
-                
-                hls.on(Hls.Events.ERROR, function(event, data) {
-                    if (data.fatal) {
-                        switch(data.type) {
-                            case Hls.ErrorTypes.NETWORK_ERROR:
-                                showError('Ağ hatası: Stream yüklenemedi');
-                                hls.startLoad();
-                                break;
-                            case Hls.ErrorTypes.MEDIA_ERROR:
-                                showError('Medya hatası');
-                                hls.recoverMediaError();
-                                break;
-                            default:
-                                showError('Yayın başlatılamadı');
-                                hls.destroy();
-                                break;
-                        }
-                    }
-                });
-            } 
-            // HLS.js is not supported on platforms that support HLS natively (Safari, iOS)
-            else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-                video.src = url;
-                video.addEventListener('loadedmetadata', function() {
-                    hideLoading();
-                    video.play().catch(err => {
-                        console.error('Autoplay error:', err);
-                    });
-                });
-                
-                video.addEventListener('error', function() {
-                    showError('Yayın yüklenemedi');
-                });
+
+        // Show controls on mouse move
+        document.addEventListener('mousemove', showControls);
+        document.addEventListener('touchstart', showControls);
+
+        // Volume Control
+        const volumeSlider = document.getElementById('volume-slider');
+        const volumePercentage = document.getElementById('volume-percentage');
+        const muteBtn = document.getElementById('mute-btn');
+
+        // Load saved volume
+        const savedVolume = localStorage.getItem('playerVolume') || 100;
+        video.volume = savedVolume / 100;
+        volumeSlider.value = savedVolume;
+        volumePercentage.textContent = savedVolume + '%';
+
+        volumeSlider.addEventListener('input', (e) => {
+            const volume = e.target.value;
+            video.volume = volume / 100;
+            volumePercentage.textContent = volume + '%';
+            localStorage.setItem('playerVolume', volume);
+            updateMuteIcon();
+        });
+
+        function toggleMute() {
+            video.muted = !video.muted;
+            updateMuteIcon();
+        }
+
+        function updateMuteIcon() {
+            if (video.muted || video.volume === 0) {
+                muteBtn.textContent = '🔇';
+            } else if (video.volume < 0.5) {
+                muteBtn.textContent = '🔉';
             } else {
-                showError('Tarayıcınız HLS desteklemiyor');
+                muteBtn.textContent = '🔊';
             }
         }
-        
-        function hideLoading() {
-            loading.style.display = 'none';
-        }
-        
-        function showError(msg) {
-            loading.style.display = 'none';
-            errorMessage.textContent = msg;
-            error.classList.add('show');
-        }
-        
+
+        // Play/Pause
         function togglePlay() {
             if (video.paused) {
                 video.play();
+                document.getElementById('play-icon').textContent = '⏸️';
+                document.getElementById('play-text').textContent = 'Duraklat';
             } else {
                 video.pause();
+                document.getElementById('play-icon').textContent = '▶️';
+                document.getElementById('play-text').textContent = 'Oynat';
             }
         }
-        
+
+        // Picture-in-Picture
+        async function togglePiP() {
+            try {
+                if (document.pictureInPictureElement) {
+                    await document.exitPictureInPicture();
+                } else {
+                    await video.requestPictureInPicture();
+                }
+            } catch (err) {
+                console.error('PiP error:', err);
+            }
+        }
+
+        // Fullscreen
         function toggleFullscreen() {
             if (!document.fullscreenElement) {
                 video.requestFullscreen().catch(err => {
@@ -268,7 +692,193 @@
                 document.exitFullscreen();
             }
         }
-        
+
+        // Quality Selector
+        function toggleQualityMenu() {
+            const menu = document.getElementById('quality-menu');
+            menu.classList.toggle('show');
+        }
+
+        function setQuality(level) {
+            if (hls) {
+                if (level === 'auto') {
+                    hls.currentLevel = -1;
+                    document.getElementById('current-quality').textContent = 'Otomatik';
+                } else {
+                    hls.currentLevel = level;
+                    const height = hls.levels[level].height;
+                    document.getElementById('current-quality').textContent = height + 'p';
+                }
+
+                // Update active state
+                document.querySelectorAll('.quality-option').forEach(opt => {
+                    opt.classList.remove('active');
+                });
+                event.target.classList.add('active');
+            }
+            toggleQualityMenu();
+        }
+
+        // Connection Quality Monitor
+        function updateConnectionQuality(bufferLength) {
+            if (bufferLength > 10) {
+                qualityDot.className = 'quality-dot good';
+                qualityText.textContent = 'Bağlantı İyi';
+            } else if (bufferLength > 5) {
+                qualityDot.className = 'quality-dot medium';
+                qualityText.textContent = 'Bağlantı Orta';
+            } else {
+                qualityDot.className = 'quality-dot poor';
+                qualityText.textContent = 'Bağlantı Zayıf';
+            }
+            bufferInfo.textContent = `Buffer: ${bufferLength.toFixed(1)}s`;
+        }
+
+        // Stream Loading
+        if (!streamUrl) {
+            showError('Stream URL bulunamadı');
+        } else {
+            loadStream(streamUrl);
+        }
+
+        function loadStream(url) {
+            if (Hls.isSupported()) {
+                hls = new Hls({
+                    enableWorker: true,
+                    lowLatencyMode: true,
+                    backBufferLength: 90,
+                    maxBufferLength: 30,
+                    maxMaxBufferLength: 600,
+                    maxBufferSize: 60 * 1000 * 1000,
+                    maxBufferHole: 0.5,
+                    highBufferWatchdogPeriod: 2,
+                    nudgeOffset: 0.1,
+                    nudgeMaxRetry: 3,
+                    maxFragLookUpTolerance: 0.25,
+                    liveSyncDurationCount: 3,
+                    liveMaxLatencyDurationCount: 10,
+                    liveDurationInfinity: false,
+                    enableSoftwareAES: true
+                });
+
+                hls.loadSource(url);
+                hls.attachMedia(video);
+
+                hls.on(Hls.Events.MANIFEST_PARSED, function (event, data) {
+                    hideLoading();
+                    video.play().catch(err => {
+                        console.error('Autoplay error:', err);
+                    });
+
+                    // Populate quality menu
+                    qualityLevels = hls.levels;
+                    const qualityMenu = document.getElementById('quality-menu');
+                    qualityMenu.innerHTML = '<div class="quality-option active" onclick="setQuality(\'auto\')">Otomatik</div>';
+
+                    qualityLevels.forEach((level, index) => {
+                        const option = document.createElement('div');
+                        option.className = 'quality-option';
+                        option.textContent = level.height + 'p';
+                        option.onclick = () => setQuality(index);
+                        qualityMenu.appendChild(option);
+                    });
+
+                    reconnectAttempts = 0;
+                });
+
+                // Monitor buffer
+                setInterval(() => {
+                    if (!video.paused) {
+                        const buffered = video.buffered;
+                        if (buffered.length > 0) {
+                            const bufferLength = buffered.end(buffered.length - 1) - video.currentTime;
+                            updateConnectionQuality(bufferLength);
+                        }
+                    }
+                }, 1000);
+
+                hls.on(Hls.Events.ERROR, function (event, data) {
+                    console.error('HLS error:', data);
+                    if (data.fatal) {
+                        switch (data.type) {
+                            case Hls.ErrorTypes.NETWORK_ERROR:
+                                showError('Ağ hatası: Stream yüklenemedi');
+                                attemptReconnect();
+                                break;
+                            case Hls.ErrorTypes.MEDIA_ERROR:
+                                console.log('Attempting media error recovery...');
+                                hls.recoverMediaError();
+                                break;
+                            default:
+                                showError('Yayın başlatılamadı');
+                                break;
+                        }
+                    }
+                });
+            }
+            // Native HLS support (Safari, iOS)
+            else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                video.src = url;
+                video.addEventListener('loadedmetadata', function () {
+                    hideLoading();
+                    video.play().catch(err => {
+                        console.error('Autoplay error:', err);
+                    });
+                    reconnectAttempts = 0;
+                });
+
+                video.addEventListener('error', function () {
+                    showError('Yayın yüklenemedi');
+                    attemptReconnect();
+                });
+            } else {
+                showError('Tarayıcınız HLS desteklemiyor');
+            }
+        }
+
+        function attemptReconnect() {
+            if (reconnectAttempts < maxReconnectAttempts) {
+                reconnectAttempts++;
+                const delay = Math.pow(2, reconnectAttempts) * 1000; // Exponential backoff
+                errorMessage.textContent = `Yeniden bağlanılıyor... (${reconnectAttempts}/${maxReconnectAttempts})`;
+
+                reconnectTimeout = setTimeout(() => {
+                    if (hls) {
+                        hls.startLoad();
+                    }
+                    hideError();
+                }, delay);
+            }
+        }
+
+        function reconnect() {
+            reconnectAttempts = 0;
+            hideError();
+            loading.style.display = 'block';
+
+            if (hls) {
+                hls.destroy();
+            }
+
+            setTimeout(() => {
+                loadStream(streamUrl);
+            }, 500);
+        }
+
+        function hideLoading() {
+            loading.style.display = 'none';
+        }
+
+        function showError(msg) {
+            loading.style.display = 'none';
+            errorMessage.textContent = msg;
+            error.classList.add('show');
+        }
+
+        function hideError() {
+            error.classList.remove('show');
+        }
+
         // Telegram Web App integration
         if (window.Telegram && window.Telegram.WebApp) {
             window.Telegram.WebApp.ready();
@@ -276,7 +886,5 @@
         }
     </script>
 </body>
+
 </html>
-
-
-
