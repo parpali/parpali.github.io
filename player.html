@@ -534,7 +534,7 @@
             <button class="btn danger" onclick="reconnect()">🔄 Yeniden Bağlan</button>
         </div>
 
-        <video id="video" playsinline autoplay></video>
+        <video id="video" playsinline autoplay muted></video>
 
         <div class="controls">
             <div class="volume-control">
@@ -766,8 +766,18 @@
 
                 hls.on(Hls.Events.MANIFEST_PARSED, function (event, data) {
                     hideLoading();
+
+                    // Try to play with sound first
+                    video.muted = false;
                     video.play().catch(err => {
-                        console.error('Autoplay error:', err);
+                        console.error('Autoplay with sound failed, trying muted:', err);
+                        // If autoplay with sound fails, try muted
+                        video.muted = true;
+                        video.play().catch(err2 => {
+                            console.error('Autoplay muted also failed:', err2);
+                            // Show play button overlay
+                            showPlayOverlay();
+                        });
                     });
 
                     // Populate quality menu
@@ -878,6 +888,53 @@
         function hideError() {
             error.classList.remove('show');
         }
+
+        // Play overlay for when autoplay fails
+        let playOverlay = null;
+
+        function showPlayOverlay() {
+            if (!playOverlay) {
+                playOverlay = document.createElement('div');
+                playOverlay.style.cssText = `
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background: var(--glass-bg);
+                    backdrop-filter: blur(20px);
+                    -webkit-backdrop-filter: blur(20px);
+                    border: 1px solid var(--glass-border);
+                    padding: 30px 50px;
+                    border-radius: 20px;
+                    cursor: pointer;
+                    z-index: 100;
+                    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+                `;
+                playOverlay.innerHTML = '<div style="font-size: 60px; text-align: center;">▶️</div><div style="color: white; margin-top: 10px; text-align: center; font-size: 16px;">Başlatmak için tıklayın</div>';
+                playOverlay.onclick = function () {
+                    video.muted = false;
+                    video.play().then(() => {
+                        playOverlay.remove();
+                        playOverlay = null;
+                        updateMuteIcon();
+                    }).catch(err => {
+                        console.error('Manual play error:', err);
+                    });
+                };
+                document.getElementById('player-container').appendChild(playOverlay);
+            }
+        }
+
+        // Auto-unmute after user interaction if video is playing muted
+        video.addEventListener('playing', function () {
+            if (video.muted && !playOverlay) {
+                // Try to unmute after a short delay
+                setTimeout(() => {
+                    video.muted = false;
+                    updateMuteIcon();
+                }, 500);
+            }
+        });
 
         // Telegram Web App integration
         if (window.Telegram && window.Telegram.WebApp) {
