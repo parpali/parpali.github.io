@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Core IPTV System v1.0</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Hls.js for cross-browser M3U8 support -->
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Authentication Layer -->
+    <div id="auth-wrapper" class="overlay">
+        <div class="auth-card">
+            <h2>Core IPTV Login</h2>
+            <p>Sisteme erişmek için yetkili parolayı girin.</p>
+            <div class="input-group">
+                <input type="password" id="password-input" placeholder="Parola" autofocus>
+                <button onclick="iptvApp.authenticate()">Giriş</button>
+            </div>
+            <p id="auth-error" class="error-text hidden">Hatalı parola, lütfen tekrar deneyin.</p>
+        </div>
+    </div>
+
+    <!-- Main Interface -->
+    <div id="app-container" class="hidden">
+        <header class="main-header">
+            <div class="logo">IPTV<span>PRO</span></div>
+            <button id="load-channels-btn" class="btn-primary" onclick="iptvApp.loadChannels()">
+                Kanalları Güncelle
+            </button>
+        </header>
+
+        <main class="layout">
+            <aside class="sidebar">
+                <div class="sidebar-header">Kanal Listesi</div>
+                <div class="search-box">
+                    <input type="text" id="search-input" placeholder="Kanal ara..." oninput="iptvApp.filterChannels()">
+                </div>
+                <div id="channel-list" class="list-container">
+                    <div class="placeholder">Henüz kanal yüklenmedi.</div>
+                </div>
+            </aside>
+
+            <section class="player-container">
+                <div class="video-wrapper">
+                    <video id="video-player" controls playsinline></video>
+                </div>
+                <div class="info-bar">
+                    <span id="current-channel-name">Yayın Bekleniyor...</span>
+                    <span id="stream-status" class="status-indicator">OFFLINE</span>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
