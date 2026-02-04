@@ -93,48 +93,75 @@ const iptvApp = {
     },
 
     /**
-     * Simple M3U Parser
+     * Simple M3U Parser with Group Support
      */
     _parseM3U(content) {
         const lines = content.split('\n');
         const channels = [];
         let currentName = '';
+        let currentGroup = 'Genel';
 
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i].trim();
+
             if (line.startsWith('#EXTINF:')) {
-                // Extract name after the last comma
-                const parts = line.split(',');
-                currentName = parts[parts.length - 1].trim() || 'Adsız Kanal';
-            } else if (line.startsWith('http')) {
+                // Try to extract group-title="..."
+                const groupMatch = line.match(/group-title="([^"]+)"/i);
+                if (groupMatch) {
+                    currentGroup = groupMatch[1];
+                }
+
+                // Extract name (after the last comma)
+                const lastCommaIndex = line.lastIndexOf(',');
+                if (lastCommaIndex !== -1) {
+                    currentName = line.substring(lastCommaIndex + 1).trim();
+                }
+            } else if (line.startsWith('#EXTGRP:')) {
+                currentGroup = line.replace('#EXTGRP:', '').trim();
+            } else if (line.startsWith('http') && !line.startsWith('#')) {
                 channels.push({
-                    name: currentName || 'Kanal ' + (channels.length + 1),
-                    url: line
+                    name: currentName || 'Adsız Kanal',
+                    url: line,
+                    group: currentGroup
                 });
                 currentName = '';
+                // Group resets to 'Genel' only if no group-title was found for next item
+                // but usually groups persist or are redefined.
             }
         }
+        this._updateCategoryDropdown(channels);
         return channels;
     },
 
-    async _fetchWithTimeout(url, timeout = 10000) {
-        const controller = new AbortController();
-        const id = setTimeout(() => controller.abort(), timeout);
-        try {
-            const response = await fetch(url, { signal: controller.signal });
-            clearTimeout(id);
-            return await response.text();
-        } catch (e) {
-            clearTimeout(id);
-            throw e;
-        }
+    _updateCategoryDropdown(channels) {
+        const dropdown = document.getElementById('category-select');
+        const groups = new Set(['all']);
+        channels.forEach(ch => {
+            if (ch.group) groups.add(ch.group);
+        });
+
+        // Current selection
+        const currentVal = dropdown.value;
+        dropdown.innerHTML = '';
+
+        Array.from(groups).sort().forEach(group => {
+            const opt = document.createElement('option');
+            opt.value = group;
+            opt.textContent = group === 'all' ? 'Tüm Kategoriler' : group;
+            dropdown.appendChild(opt);
+        });
+        dropdown.value = groups.has(currentVal) ? currentVal : 'all';
     },
 
     filterChannels() {
         const query = document.getElementById('search-input').value.toLowerCase();
-        const filtered = this.allParsedChannels.filter(ch =>
-            ch.name.toLowerCase().includes(query)
-        );
+        const category = document.getElementById('category-select').value;
+
+        const filtered = this.allParsedChannels.filter(ch => {
+            const matchesQuery = ch.name.toLowerCase().includes(query);
+            const matchesCategory = category === 'all' || ch.group === category;
+            return matchesQuery && matchesCategory;
+        });
         this._renderList(filtered);
     },
 

@@ -39,6 +39,9 @@
                 <div class="sidebar-header">Kanal Listesi</div>
                 <div class="search-box">
                     <input type="text" id="search-input" placeholder="Kanal ara..." oninput="iptvApp.filterChannels()">
+                    <select id="category-select" onchange="iptvApp.filterChannels()" style="width: 100%; margin-top: 8px; background: #0d1117; color: white; border: 1px solid #30363d; padding: 10px; border-radius: 8px;">
+                        <option value="all">Tüm Kategoriler</option>
+                    </select>
                 </div>
                 <div id="channel-list" class="list-container">
                     <div class="placeholder">Henüz kanal yüklenmedi.</div>
